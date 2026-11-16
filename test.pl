@@ -8,7 +8,22 @@ file('cmmExamples/example3.cmm').
 file('cmmExamples/example4.cmm').
 file('cmmExamples/example5.cmm').
 
-my_tokenize_file :-   file(Link),    tokenize_file(Link, TokensContaminataed, [ cased(true)]),filterCtrlsAndDblSpaces(TokensContaminataed, Tokens), parse(Tokens, Ast,[]), extractExp(Ast),nl ,fail.
+
+my_tokenize_file :-
+    forall(file(Link),
+           catch(run_file(Link), Error, (print_message(error, Error), nl))).
+
+run_file(Link) :-
+    (   tokenize_file(Link, RawTokens, [cased(true)]),
+        filterCtrlsAndDblSpaces(RawTokens, Tokens),
+        parse(Tokens, Ast, [])
+    ->  (   extractExp(Ast)
+        ->  true
+        ;   format("Error: ~w was parsed but could not be run~n", [Link])
+        )
+    ;   format("Error: ~w could not be parsed~n", [Link])
+    ),
+    nl.
 
 are_identical(X, Y) :- %https://stackoverflow.com/questions/297996/prolog-filtering-a-list
     X == Y.
@@ -31,10 +46,9 @@ pl_program(Ss)   --> rest_statements(Ss). %https://swish.swi-prolog.org/p/Compil
 statement(assign(id(X), E)) --> identifier(X), {X \= 'print', X \= 'if', X \= 'while'},    [punct(=)] -> cond_expre(E), {  assertThisFact(id(X,_)) }.
 
 
-statement(if(T,S1,S2))     --> [word(if)], [punct('(')], cond_expre(T), [punct(')')],(	(compound(S1), [word(else)], compound(S2)),!; (statement(_S1), {onlyAssignOrPrint(_S1), S1 = (_S1,[])}, [word(else)], statement(_S2),{onlyAssignOrPrint(_S2), S2 = (_S2, [])})).
+statement(if(T,S1,S2))     --> [word(if)], [punct('(')], cond_expre(T), [punct(')')], ((compound(S1), [word(else)], compound(S2)), !; (statement(Stmt1), {onlyAssignOrPrint(Stmt1), S1 = (Stmt1,[])}, [word(else)], statement(Stmt2), {onlyAssignOrPrint(Stmt2), S2 = (Stmt2,[])})).
 
-statement(if(T,S))     --> [word(if)], [punct('(')], cond_expre(T), [punct(')')], ( compound(S),!; (statement(_S) ,{onlyAssignOrPrint(_S), S = (_S,[])})).
-
+statement(if(T,S))     --> [word(if)], [punct('(')], cond_expre(T), [punct(')')], (compound(S), !; (statement(Stmt), {onlyAssignOrPrint(Stmt), S = (Stmt,[])})).
 
 statement(while(T,S))  --> [word('while')] -> [punct('(')] -> cond_expre(T) -> [punct(')')] ->  compound(S)  .
 statement(print(statements(S)))  --> [word(print)] -> statement(W),  {flatten(W,S)}.						 	
