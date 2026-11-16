@@ -25,11 +25,8 @@ run_file(Link) :-
     ),
     nl.
 
-are_identical(X, Y) :- %https://stackoverflow.com/questions/297996/prolog-filtering-a-list
-    X == Y.
 
-filterList(A, In, Out) :-
-    exclude(are_identical(A), In, Out).
+filterList(A, In, Out) :- exclude(==(A), In, Out).
 
 
 filterCtrlsAndDblSpaces(In, Out4) :- filterList(space(' '),In,Out1) , filterList(cntrl('\r'),Out1,Out2), filterList(cntrl('\n'),Out2,Out3),   filterList(cntrl('\t'),Out3,Out4).
