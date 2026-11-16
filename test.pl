@@ -38,7 +38,7 @@ statement(if(T,S))     --> [word(if)], [punct('(')], cond_expre(T), [punct(')')]
 
 statement(while(T,S))  --> [word('while')] -> [punct('(')] -> cond_expre(T) -> [punct(')')] ->  compound(S)  .
 statement(print(statements(S)))  --> [word(print)] -> statement(W),  {flatten(W,S)}.						 	
-statement([W|Ww]) --> pl_constant(W) ->  [punct(,)] , statement(Ww). 
+statement([W|Ww]) --> pl_constant(W) ->  [punct(',')] , statement(Ww). 
 statement(W) --> pl_constant(W),  statement.  
 statement --> [].
 compound(S) --> [punct('{')], rest_statements(S), [punct('}')].
