@@ -7,7 +7,7 @@ file('cmmExamples/example2.cmm').
 file('cmmExamples/example3.cmm').
 file('cmmExamples/example4.cmm').
 file('cmmExamples/example5.cmm').
-
+file('cmmExamples/division.cmm').
 
 my_tokenize_file :-
     forall(file(Link),
@@ -85,7 +85,7 @@ replace_existing_fact(OldVar, NewVar) :-
 	 
 extractExp([]). 
 extractExp((LeftNode,RightTree)) :-  								 
-	(LeftNode = assign(id(Id),E),	evaluteExp(E,Results1), 	Results is floor(Results1),    replace_each_existing_fact(id(Id,_),id(Id,num(Results))), extractExp(RightTree)),!;
+	(LeftNode = assign(id(Id),E),	evaluteExp(E,Results),    replace_each_existing_fact(id(Id,_),id(Id,num(Results))), extractExp(RightTree)),!;
 	(LeftNode = print(statements(List)) , printStatements(List),  extractExp(RightTree)),!; 
 	 (LeftNode = if(T,S1,S2), evaluteExp(T,Results) , ((Results == 1, extractExp(S1));	(Results == 0, extractExp(S2))), extractExp(RightTree)),!;
 	 (LeftNode = if(T,S), evaluteExp(T,Results), ((Results == 1, extractExp(S)); (Results == 0)), extractExp(RightTree)),!;
@@ -175,8 +175,8 @@ additive_rest(N,N) --> [].
 
 multiplicative(N) --> atomic(N1), multiplicative_rest(N1,N).
 multiplicative_rest(N1,N) --> [punct('*')], !, atomic(N2), {N3 = (*,N1,N2)}, multiplicative_rest(N3,N);
-								[punct('/')], !, atomic(N2), {N3 = (/,N1,N2)}, multiplicative_rest(N3,N);	
-								[punct('%')], !, atomic(N2), {N3 = (mod,N1,N2)}, multiplicative_rest(N3,N).
+								[punct('/')], !, atomic(N2), {N3 = (//,N1,N2)}, multiplicative_rest(N3,N);	
+								[punct('%')], !, atomic(N2), {N3 = (rem,N1,N2)}, multiplicative_rest(N3,N).
 multiplicative_rest(N,N) --> [].
 
 atomic(N) --> [punct('(')], !, expre(N), [punct(')')];  num(N). 
