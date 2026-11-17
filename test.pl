@@ -1,4 +1,6 @@
 :- dynamic id/2.
+:- dynamic base_dir/1.
+:- prolog_load_context(directory, Dir), retractall(base_dir(_)), assertz(base_dir(Dir)).
 :- use_module(library(tokenize)).
 :- use_module(library(pprint)).
 :- use_module(library(lists)).
@@ -25,7 +27,9 @@ report_error(Error) :- print_message(error, Error), nl.
 
 run_file(Link) :-
     retractall(id(_,_)),
-    (   tokenize_file(Link, RawTokens, [cased(true)]),
+    base_dir(Dir),
+    directory_file_path(Dir, Link, Path),
+    (   tokenize_file(Path, RawTokens, [cased(true)]),
         filterCtrlsAndDblSpaces(RawTokens, Tokens),
         parse(Tokens, Ast, [])
     ->  (   extractExp(Ast)
