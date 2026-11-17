@@ -14,6 +14,8 @@ file('cmmExamples/unassigned.cmm').
 file('cmmExamples/whilenobraces.cmm').
 file('cmmExamples/danglingelse.cmm').
 file('cmmExamples/mixedbraces.cmm').
+file('cmmExamples/printexpr.cmm').
+
 
 my_tokenize_file :-
     forall(file(Link), catch(run_file(Link), Error, report_error(Error))).
@@ -63,12 +65,11 @@ statement(If) -->
     ).
 
 statement(while(T,S)) --> [word(while)] -> [punct('(')], cond_expre(T), [punct(')')], body(S).
-statement(print(statements(S)))  --> [word(print)] -> statement(W),  {flatten(W,S)}.						 	
-statement([W|Ww]) --> pl_constant(W) ->  [punct(',')] , statement(Ww). 
-statement(W) --> pl_constant(W),  statement.  
-statement --> [].
-compound(S) --> [punct('{')], rest_statements(S), [punct('}')].
+statement(print(Es)) --> [word(print)] -> expr_list(Es).
+expr_list([E|Es]) --> cond_expre(E), ( [punct(',')] -> expr_list(Es) ; {Es = []} ).
 
+
+compound(S) --> [punct('{')], rest_statements(S), [punct('}')].
 body(S)          --> compound(S), !.
 body((Stmt, [])) --> statement(Stmt).
 
@@ -86,7 +87,7 @@ identifier(X)              --> [word(X)].
 extractExp([]). 
 extractExp((LeftNode,RightTree)) :-  								 
 	(LeftNode = assign(id(Id),E),	evaluteExp(E,Results),    retractall(id(Id,_)), assertz(id(Id,num(Results))), extractExp(RightTree)),!;
-	(LeftNode = print(statements(List)) , printStatements(List),  extractExp(RightTree)),!; 
+	(LeftNode = print(List) , printStatements(List),  extractExp(RightTree)),!; 
 	 (LeftNode = if(T,S1,S2), evaluteExp(T,Results) , ((Results == 1, extractExp(S1));	(Results == 0, extractExp(S2))), extractExp(RightTree)),!;
 	 (LeftNode = if(T,S), evaluteExp(T,Results), ((Results == 1, extractExp(S)); (Results == 0)), extractExp(RightTree)),!;
 	 (LeftNode = while(T,S), evaluteExp(T,Results),  (	(Results == 1, extractExp(S),  extractExp((LeftNode,RightTree)))	; ( extractExp(RightTree) ) )	)	.
@@ -118,13 +119,10 @@ applyLogical((\/), X, Y, Res) :- ( (X =\= 0 ; Y =\= 0) -> Res = 1 ; Res = 0 ).
 
 
 printStatements(Values) :-
-    maplist(value_of, Values, Numbers),
+    maplist(evaluteExp, Values, Numbers),
     atomic_list_concat(Numbers, ' ', Line),
     write(Line), nl.
 
-value_of(num(N), N).
-value_of(id(V), N) :- traceID(V, N).
-   
 								
 traceID(Name, Value) :-
     (   id(Name, num(Value))
