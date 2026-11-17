@@ -9,12 +9,14 @@ file('cmmExamples/example4.cmm').
 file('cmmExamples/example5.cmm').
 file('cmmExamples/division.cmm').
 file('cmmExamples/logic.cmm').
+file('cmmExamples/reset.cmm').
 
 my_tokenize_file :-
     forall(file(Link),
            catch(run_file(Link), Error, (print_message(error, Error), nl))).
 
 run_file(Link) :-
+    retractall(id(_,_)),
     (   tokenize_file(Link, RawTokens, [cased(true)]),
         filterCtrlsAndDblSpaces(RawTokens, Tokens),
         parse(Tokens, Ast, [])
