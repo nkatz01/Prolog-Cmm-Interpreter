@@ -11,6 +11,9 @@ file('cmmExamples/division.cmm').
 file('cmmExamples/logic.cmm').
 file('cmmExamples/reset.cmm').
 file('cmmExamples/unassigned.cmm').
+file('cmmExamples/whilenobraces.cmm').
+file('cmmExamples/danglingelse.cmm').
+file('cmmExamples/mixedbraces.cmm').
 
 my_tokenize_file :-
     forall(file(Link), catch(run_file(Link), Error, report_error(Error))).
@@ -52,17 +55,22 @@ keyword(while).
 
 statement(assign(id(X), E)) --> identifier(X), {\+ keyword(X)}, [punct(=)] -> cond_expre(E).
 
-statement(if(T,S1,S2))     --> [word(if)], [punct('(')], cond_expre(T), [punct(')')], ((compound(S1), [word(else)], compound(S2)), !; (statement(Stmt1), {onlyAssignOrPrint(Stmt1), S1 = (Stmt1,[])}, [word(else)], statement(Stmt2), {onlyAssignOrPrint(Stmt2), S2 = (Stmt2,[])})).
+statement(If) -->
+    [word(if)] -> [punct('(')], cond_expre(T), [punct(')')], body(Then),
+    (   [word(else)]
+    ->  body(Else), {If = if(T, Then, Else)}
+    ;   {If = if(T, Then)}
+    ).
 
-statement(if(T,S))     --> [word(if)], [punct('(')], cond_expre(T), [punct(')')], (compound(S), !; (statement(Stmt), {onlyAssignOrPrint(Stmt), S = (Stmt,[])})).
-
-statement(while(T,S))  --> [word('while')] -> [punct('(')] -> cond_expre(T) -> [punct(')')] ->  compound(S)  .
+statement(while(T,S)) --> [word(while)] -> [punct('(')], cond_expre(T), [punct(')')], body(S).
 statement(print(statements(S)))  --> [word(print)] -> statement(W),  {flatten(W,S)}.						 	
 statement([W|Ww]) --> pl_constant(W) ->  [punct(',')] , statement(Ww). 
 statement(W) --> pl_constant(W),  statement.  
 statement --> [].
 compound(S) --> [punct('{')], rest_statements(S), [punct('}')].
 
+body(S)          --> compound(S), !.
+body((Stmt, [])) --> statement(Stmt).
 
 rest_statements((S, Ss))    -->   statement(S), rest_statements(Ss).
 rest_statements([])  --> [].
@@ -75,9 +83,6 @@ pl_constant(id(X)) --> identifier(X), {\+ keyword(X)}.
 pl_integer(X)              --> [number(X)].
 identifier(X)              --> [word(X)].
 
-onlyAssignOrPrint(S) :- \+(S == if(_,_,_); S == while(_,_)).
-
-	 
 extractExp([]). 
 extractExp((LeftNode,RightTree)) :-  								 
 	(LeftNode = assign(id(Id),E),	evaluteExp(E,Results),    retractall(id(Id,_)), assertz(id(Id,num(Results))), extractExp(RightTree)),!;
