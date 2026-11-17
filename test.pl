@@ -8,6 +8,7 @@ file('cmmExamples/example3.cmm').
 file('cmmExamples/example4.cmm').
 file('cmmExamples/example5.cmm').
 file('cmmExamples/division.cmm').
+file('cmmExamples/logic.cmm').
 
 my_tokenize_file :-
     forall(file(Link),
@@ -112,8 +113,8 @@ applyRelational(Op,X,Y,Res) :- (is_equality_op(Op); is_relat_op(Op)), Operate =.
 applyArith(Op,X,Y,Res) :-  \+is_logical_op(Op), Operate =.. [Op,X,Y] , Res is Operate .
 
 
-applyLogical(Op,X,Y,Res) :-    	 is_logical_op(Op), (is_one_or_zero(X,Y);	(write('Only 1 and 0 can be AND\\ORD'),nl,false)),	((Op == /\  ,		Res is /\(X,Y))		;	(Op == \/ , 	Res is \/(X,Y)	)).	% ; write('Only 1 and 0 can be AND\\ORD'),nl
-
+applyLogical((/\), X, Y, Res) :- ( X =\= 0, Y =\= 0 -> Res = 1 ; Res = 0 ).
+applyLogical((\/), X, Y, Res) :- ( (X =\= 0 ; Y =\= 0) -> Res = 1 ; Res = 0 ).
 
 
 
@@ -152,7 +153,7 @@ relat_rest(T,T) --> [].
 atomic_texpre(T) -->  arith_expre(T); [punct('(')], !, cond_expre(T), [punct(')')]    	.
 arith_expre(V) --> expre(V).
 
-is_one_or_zero(E1,E2) :- (E1 == 1 ,E2 == 0);(E1 == 0, E2 == 1);(E1 == 1 ,E2 == 1);(E1 == 0, E2 == 0).
+
 opening_paren('(') --> [punct('(')].
 closing_paren(')') --> [punct(')')].
 
