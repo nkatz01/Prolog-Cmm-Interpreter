@@ -118,12 +118,13 @@ applyLogical((\/), X, Y, Res) :- ( (X =\= 0 ; Y =\= 0) -> Res = 1 ; Res = 0 ).
 
 
 
-printStatements([]) :- nl, !.%https://stackoverflow.com/questions/22646284/how-can-i-print-items-in-a-list-one-by-one
-printStatements([Head|Tail]) :-
-(Head = num(Res); (Head = id(V), traceID(V,Res))),
-   print(Res),
-   tab(1),
-   printStatements(Tail).
+printStatements(Values) :-
+    maplist(value_of, Values, Numbers),
+    atomic_list_concat(Numbers, ' ', Line),
+    write(Line), nl.
+
+value_of(num(N), N).
+value_of(id(V), N) :- traceID(V, N).
    
    
 
