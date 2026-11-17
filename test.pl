@@ -2,8 +2,7 @@
 :- dynamic base_dir/1.
 :- prolog_load_context(directory, Dir), retractall(base_dir(_)), assertz(base_dir(Dir)).
 :- use_module(library(tokenize)).
-:- use_module(library(pprint)).
-:- use_module(library(lists)).
+
 file('cmmExamples/example1.cmm').
 file('cmmExamples/example2.cmm').
 file('cmmExamples/example3.cmm').
@@ -153,12 +152,8 @@ relat_expre(T) --> atomic_texpre(E1), relat_rest(E1,T).
 relat_rest(E1,T) -->  relat_op(Op) ,!, atomic_texpre(E2) , { V=(Op,E1,E2) },relat_rest(V,T).
 relat_rest(T,T) --> [].
 
-atomic_texpre(T) -->  arith_expre(T); [punct('(')], !, cond_expre(T), [punct(')')]    	.
-arith_expre(V) --> expre(V).
+atomic_texpre(T) -->  expre(T); [punct('(')], !, cond_expre(T), [punct(')')]    	.
 
-
-opening_paren('(') --> [punct('(')].
-closing_paren(')') --> [punct(')')].
 
 equality_op(==)         --> [punct(=),punct(=)]. 
 equality_op(\=)        --> [punct(!),punct(=)]. 
@@ -183,8 +178,7 @@ multiplicative_rest(N1,N) --> [punct('*')], !, atomic(N2), {N3 = (*,N1,N2)}, mul
 								[punct('%')], !, atomic(N2), {N3 = (rem,N1,N2)}, multiplicative_rest(N3,N).
 multiplicative_rest(N,N) --> [].
 
-atomic(N) --> [punct('(')], !, expre(N), [punct(')')];  num(N). 
-num(N) --> pl_constant(N).
+atomic(N) --> [punct('(')], !, expre(N), [punct(')')];  pl_constant(N). 
 
 
 
