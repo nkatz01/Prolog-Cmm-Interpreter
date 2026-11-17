@@ -10,10 +10,13 @@ file('cmmExamples/example5.cmm').
 file('cmmExamples/division.cmm').
 file('cmmExamples/logic.cmm').
 file('cmmExamples/reset.cmm').
+file('cmmExamples/unassigned.cmm').
 
 my_tokenize_file :-
-    forall(file(Link),
-           catch(run_file(Link), Error, (print_message(error, Error), nl))).
+    forall(file(Link), catch(run_file(Link), Error, report_error(Error))).
+
+report_error(cmm_error(Message)) :- !, format("Error: ~w~n", [Message]), nl.
+report_error(Error) :- print_message(error, Error), nl.
 
 run_file(Link) :-
     retractall(id(_,_)),
@@ -42,9 +45,12 @@ parse(Tokens, Ast,Rest) :-
  
 pl_program(Ss)   --> rest_statements(Ss). %https://swish.swi-prolog.org/p/Compiler1.swinb
 
+keyword(print).
+keyword(if).
+keyword(else).
+keyword(while).
 
-statement(assign(id(X), E)) --> identifier(X), {X \= 'print', X \= 'if', X \= 'while'},    [punct(=)] -> cond_expre(E), {  assertThisFact(id(X,_)) }.
-
+statement(assign(id(X), E)) --> identifier(X), {\+ keyword(X)}, [punct(=)] -> cond_expre(E).
 
 statement(if(T,S1,S2))     --> [word(if)], [punct('(')], cond_expre(T), [punct(')')], ((compound(S1), [word(else)], compound(S2)), !; (statement(Stmt1), {onlyAssignOrPrint(Stmt1), S1 = (Stmt1,[])}, [word(else)], statement(Stmt2), {onlyAssignOrPrint(Stmt2), S2 = (Stmt2,[])})).
 
@@ -64,31 +70,17 @@ rest_statements([])  --> [].
 
 
 pl_constant(num(N))     --> pl_integer(N), !.
-pl_constant(id(X))       --> identifier(X), {call(id(X,_)) }.
+pl_constant(id(X)) --> identifier(X), {\+ keyword(X)}.
 
 pl_integer(X)              --> [number(X)].
 identifier(X)              --> [word(X)].
 
 onlyAssignOrPrint(S) :- \+(S == if(_,_,_); S == while(_,_)).
 
-assertThisFact(Fact):- %https://stackoverflow.com/questions/10437395/prolog-how-to-assert-make-a-database-only-once
-    \+( Fact ),!,         
-    assert(Fact).
-assertThisFact(_).
-
-
-replace_each_existing_fact(OldVar, NewVar) :-%https://stackoverflow.com/questions/37871775/prolog-replace-fact-using-fact
-forall(replace_existing_fact(OldVar, NewVar), true).
-
-replace_existing_fact(OldVar, NewVar) :-
-       call(OldVar) ,
-	retract(OldVar),
-   assert(NewVar).
- 
 	 
 extractExp([]). 
 extractExp((LeftNode,RightTree)) :-  								 
-	(LeftNode = assign(id(Id),E),	evaluteExp(E,Results),    replace_each_existing_fact(id(Id,_),id(Id,num(Results))), extractExp(RightTree)),!;
+	(LeftNode = assign(id(Id),E),	evaluteExp(E,Results),    retractall(id(Id,_)), assertz(id(Id,num(Results))), extractExp(RightTree)),!;
 	(LeftNode = print(statements(List)) , printStatements(List),  extractExp(RightTree)),!; 
 	 (LeftNode = if(T,S1,S2), evaluteExp(T,Results) , ((Results == 1, extractExp(S1));	(Results == 0, extractExp(S2))), extractExp(RightTree)),!;
 	 (LeftNode = if(T,S), evaluteExp(T,Results), ((Results == 1, extractExp(S)); (Results == 0)), extractExp(RightTree)),!;
@@ -128,12 +120,13 @@ printStatements(Values) :-
 value_of(num(N), N).
 value_of(id(V), N) :- traceID(V, N).
    
-   
-
 								
-traceID(Id,FinalNum) :-  Id = num(FinalNum).
-traceID(Id,LinkIdOrEnd) :- call(id(Id,IntermediateLink)), traceID(IntermediateLink,LinkIdOrEnd).
-
+traceID(Name, Value) :-
+    (   id(Name, num(Value))
+    ->  true
+    ;   format(atom(Message), "variable ~w is used before it is assigned", [Name]),
+        throw(cmm_error(Message))
+    ).
 
 
 cond_expre(T) -->  and_expre(E1), or_rest(E1,T). 	 
