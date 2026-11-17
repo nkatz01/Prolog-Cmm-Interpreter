@@ -86,24 +86,24 @@ identifier(X)              --> [word(X)].
 
 extractExp([]). 
 extractExp((LeftNode,RightTree)) :-  								 
-	(LeftNode = assign(id(Id),E),	evaluteExp(E,Results),    retractall(id(Id,_)), assertz(id(Id,num(Results))), extractExp(RightTree)),!;
+	(LeftNode = assign(id(Id),E),	evaluateExp(E,Results),    retractall(id(Id,_)), assertz(id(Id,num(Results))), extractExp(RightTree)),!;
 	(LeftNode = print(List) , printStatements(List),  extractExp(RightTree)),!; 
-	 (LeftNode = if(T,S1,S2), evaluteExp(T,Results) , ((Results == 1, extractExp(S1));	(Results == 0, extractExp(S2))), extractExp(RightTree)),!;
-	 (LeftNode = if(T,S), evaluteExp(T,Results), ((Results == 1, extractExp(S)); (Results == 0)), extractExp(RightTree)),!;
-	 (LeftNode = while(T,S), evaluteExp(T,Results),  (	(Results == 1, extractExp(S),  extractExp((LeftNode,RightTree)))	; ( extractExp(RightTree) ) )	)	.
+	 (LeftNode = if(T,S1,S2), evaluateExp(T,Results) , ((Results == 1, extractExp(S1));	(Results == 0, extractExp(S2))), extractExp(RightTree)),!;
+	 (LeftNode = if(T,S), evaluateExp(T,Results), ((Results == 1, extractExp(S)); (Results == 0)), extractExp(RightTree)),!;
+	 (LeftNode = while(T,S), evaluateExp(T,Results),  (	(Results == 1, extractExp(S),  extractExp((LeftNode,RightTree)))	; ( extractExp(RightTree) ) )	)	.
  
 
 
-evaluteExp(Tree,Res) :- 
+evaluateExp(Tree,Res) :- 
  	Tree = num(Res); (Tree = id(V), traceID(V,Res));
 (	(Tree = (Op, num(X), num(Y))) ; 	(Tree = (Op, id(V), num(Y)), traceID(V,X)) ;	(Tree = (Op, num(X), id(V)), traceID(V,Y)); 	(Tree = (Op, id(V1), id(V2)),  traceID(V1,X),traceID(V2,Y))	),
 	
 	( applyRelational(Op,X,Y,Res);applyLogical(Op,X,Y,Res); applyArith(Op,X,Y,Res))	.
 
 
-evaluteExp((Op,LeftNode,RightNode),Res) :- 
+evaluateExp((Op,LeftNode,RightNode),Res) :- 
 											
-evaluteExp(LeftNode, ResLeft),  evaluteExp(RightNode,ResRight),
+evaluateExp(LeftNode, ResLeft),  evaluateExp(RightNode,ResRight),
 
 ( applyRelational(Op,ResLeft,ResRight,Res); applyLogical(Op,ResLeft,ResRight,Res);applyArith(Op,ResLeft,ResRight,Res)).
 
@@ -119,7 +119,7 @@ applyLogical((\/), X, Y, Res) :- ( (X =\= 0 ; Y =\= 0) -> Res = 1 ; Res = 0 ).
 
 
 printStatements(Values) :-
-    maplist(evaluteExp, Values, Numbers),
+    maplist(evaluateExp, Values, Numbers),
     atomic_list_concat(Numbers, ' ', Line),
     write(Line), nl.
 
