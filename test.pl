@@ -16,7 +16,7 @@ example_file('cmmExamples/whilenobraces.cmm').
 example_file('cmmExamples/danglingelse.cmm').
 example_file('cmmExamples/mixedbraces.cmm').
 example_file('cmmExamples/printexpr.cmm').
-
+example_file('cmmExamples/badcondition.cmm').
 
 run_examples :-
     forall(example_file(Link), catch(run_file(Link), Error, report_error(Error))).
@@ -91,11 +91,17 @@ run_statements([]).
 run_statements((LeftNode,RightTree)) :-  								 
 	(LeftNode = assign(id(Id),E),	evaluate_expression(E,Results),    retractall(variable(Id,_)), assertz(variable(Id,num(Results))), run_statements(RightTree)),!;
 	(LeftNode = print(List) , print_values(List),  run_statements(RightTree)),!; 
-	 (LeftNode = if(T,S1,S2), evaluate_expression(T,Results) , ((Results == 1, run_statements(S1));	(Results == 0, run_statements(S2))), run_statements(RightTree)),!;
-	 (LeftNode = if(T,S), evaluate_expression(T,Results), ((Results == 1, run_statements(S)); (Results == 0)), run_statements(RightTree)),!;
-	 (LeftNode = while(T,S), evaluate_expression(T,Results),  (	(Results == 1, run_statements(S),  run_statements((LeftNode,RightTree)))	; ( run_statements(RightTree) ) )	)	.
+	 (LeftNode = if(T,S1,S2), condition_value(T,Results) , ((Results == 1, run_statements(S1));	(Results == 0, run_statements(S2))), run_statements(RightTree)),!;
+	 (LeftNode = if(T,S), condition_value(T,Results), ((Results == 1, run_statements(S)); (Results == 0)), run_statements(RightTree)),!;
+	 (LeftNode = while(T,S), condition_value(T,Results),  (	(Results == 1, run_statements(S),  run_statements((LeftNode,RightTree)))	; ( run_statements(RightTree) ) )	)	.
  
-
+condition_value(T, Value) :-
+    evaluate_expression(T, Value),
+    (   (Value == 1 ; Value == 0)
+    ->  true
+    ;   format(atom(Message), "condition must be 1 or 0, but was ~w", [Value]),
+        throw(cmm_error(Message))
+    ).
 
 evaluate_expression(Tree,Res) :- 
  	Tree = num(Res); (Tree = id(V), variable_value(V,Res));
