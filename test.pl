@@ -16,7 +16,8 @@ example_file('cmmExamples/whilenobraces.cmm').
 example_file('cmmExamples/danglingelse.cmm').
 example_file('cmmExamples/mixedbraces.cmm').
 example_file('cmmExamples/printexpr.cmm').
-example_file('cmmExamples/badcondition.cmm').
+example_file('cmmExamples/condition.cmm').
+
 
 run_examples :-
     forall(example_file(Link), catch(run_file(Link), Error, report_error(Error))).
@@ -94,14 +95,16 @@ run_statements((LeftNode,RightTree)) :-
 	 (LeftNode = if(T,S1,S2), condition_value(T,Results) , ((Results == 1, run_statements(S1));	(Results == 0, run_statements(S2))), run_statements(RightTree)),!;
 	 (LeftNode = if(T,S), condition_value(T,Results), ((Results == 1, run_statements(S)); (Results == 0)), run_statements(RightTree)),!;
 	 (LeftNode = while(T,S), condition_value(T,Results),  (	(Results == 1, run_statements(S),  run_statements((LeftNode,RightTree)))	; ( run_statements(RightTree) ) )	)	.
- 
-condition_value(T, Value) :-
-    evaluate_expression(T, Value),
-    (   (Value == 1 ; Value == 0)
+
+condition_value(Condition, Value) :-
+    evaluate_expression(Condition, Value),
+    (   (Value == 0 ; Value == 1)
     ->  true
-    ;   format(atom(Message), "condition must be 1 or 0, but was ~w", [Value]),
+    ;   format(atom(Message), "condition must be 1 or 0, but it was ~w", [Value]),
         throw(cmm_error(Message))
     ).
+ 
+
 
 evaluate_expression(Tree,Res) :- 
  	Tree = num(Res); (Tree = id(V), variable_value(V,Res));
