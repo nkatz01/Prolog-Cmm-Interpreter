@@ -1,16 +1,14 @@
-# Node rules:
-## Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
-.grunt
+# SWI-Prolog
+*.qlf
+*.sav
 
-## Dependency directory
-## Commenting this out is preferred by some people, see
-## https://docs.npmjs.com/misc/faq#should-i-check-my-node_modules-folder-into-git
-node_modules
+# Editor backups and settings
+*~
+*.bak
+.vscode/
+.idea/
 
-# Book build output
-_book
-
-# eBook build output
-*.epub
-*.mobi
-*.pdf
+# Operating system files
+Thumbs.db
+desktop.ini
+.DS_Store
