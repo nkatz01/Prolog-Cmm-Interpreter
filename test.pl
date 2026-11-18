@@ -1,3 +1,7 @@
+% Usage: load this file, then
+%   ?- run_examples.     % run all example programs
+%   ?- test_examples.    % check each one against its .output file
+
 :- dynamic variable/2.
 :- dynamic base_dir/1.
 :- prolog_load_context(directory, Dir), retractall(base_dir(_)), assertz(base_dir(Dir)).
@@ -40,6 +44,37 @@ run_file(Link) :-
     ),
     nl.
 
+% ---------------------------------------------------------------------
+% Testing: compare each example's output with its .output file
+% ---------------------------------------------------------------------
+
+test_examples :-
+    forall(example_file(Link), check_example(Link)).
+
+check_example(Link) :-
+    file_name_extension(Base, cmm, Link),
+    file_name_extension(Base, output, OutputLink),
+    base_dir(Dir),
+    directory_file_path(Dir, OutputLink, OutputPath),
+    (   exists_file(OutputPath)
+    ->  compare_output(Link, OutputPath)
+    ;   format("NO EXPECTED OUTPUT  ~w (missing ~w)~n", [Link, OutputLink])
+    ).
+
+compare_output(Link, OutputPath) :-
+    with_output_to(string(Actual0), catch(run_file(Link), Error, report_error(Error))),
+    read_file_to_string(OutputPath, Expected0, []),
+    normalise(Actual0, Actual),
+    normalise(Expected0, Expected),
+    (   Actual == Expected
+    ->  format("PASS  ~w~n", [Link])
+    ;   format("FAIL  ~w~n  expected: ~q~n  actual:   ~q~n", [Link, Expected, Actual])
+    ).
+
+normalise(Text, Clean) :-
+    split_string(Text, "\n", "\r", Lines),
+    exclude(==(""), Lines, NonEmpty),
+    atomic_list_concat(NonEmpty, '\n', Clean).
 
 filter_list(A, In, Out) :- exclude(==(A), In, Out).
 
